@@ -1,0 +1,37 @@
+# === Grupo de usuarios humanos: cloudnative-admins ===
+# Permite administrar todos los recursos en el compartimento del workshop
+Allow group cloudnative-admins to manage all-resources in compartment okeworkshop
+
+# Permite el uso de tag namespaces definidos a nivel tenancy (si se usan etiquetas)
+Allow group cloudnative-admins to use tag-namespaces in tenancy
+
+# Permite listar compartimentos, útil para navegación y despliegue desde consola o IaC
+Allow group cloudnative-admins to read compartments in tenancy
+
+# === OCI DevOps Service ===
+# Permite crear y administrar recursos DevOps como repos, pipelines, deploy stages, etc.
+Allow service devops to manage devops-family in compartment okeworkshop
+
+# DevOps necesita acceso a red (VCN/Subnet/NSG) para ejecutar deployment pipelines
+Allow service devops to use virtual-network-family in compartment okeworkshop
+
+# Permite que DevOps lea secretos para autenticación con Docker repos, keys, etc.
+Allow service devops to read secret-family in compartment okeworkshop
+
+# Permite que DevOps acceda a los repos OCI para clonar fuentes o artefactos
+Allow service devops to read repos in compartment okeworkshop
+
+# === Resource Manager (Terraform-as-a-Service) ===
+# Permite que los jobs de Resource Manager creen y gestionen infraestructura
+Allow service resource-manager to manage all-resources in compartment okeworkshop
+
+# === Oracle Kubernetes Engine (OKE) ===
+# Permite al control plane crear y administrar clusters y node pools
+Allow service oke to manage cluster-family in compartment okeworkshop
+Allow service oke to manage node-pools in compartment okeworkshop
+
+# Permite al plano de control interactuar con red, balanceadores, NSG, etc.
+Allow service oke to use subnets in compartment okeworkshop
+Allow service oke to use vnics in compartment okeworkshop
+Allow service oke to use load-balancers in compartment okeworkshop
+Allow service oke to use network-security-groups in compartment okeworkshop

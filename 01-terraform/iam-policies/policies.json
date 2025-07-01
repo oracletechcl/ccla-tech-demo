@@ -1,0 +1,21 @@
+{
+  "compartmentId": "ocid1.compartment.oc1..aaaaaaaal7vn7wsy3qgizklrlfgo2vllfta3wkqlnfkvykoroite3lzxbnna",
+  "name": "cloudnative-workshop-policy",
+  "description": "Políticas para ejecutar el workshop Cloud Native con DevOps, OKE y Resource Manager",
+  "statements": [
+    "Allow group cloudnative-admins to manage all-resources in compartment ocid1.compartment.oc1..aaaaaaaal7vn7wsy3qgizklrlfgo2vllfta3wkqlnfkvykoroite3lzxbnna",
+    "Allow group cloudnative-admins to use tag-namespaces in compartment ocid1.compartment.oc1..aaaaaaaal7vn7wsy3qgizklrlfgo2vllfta3wkqlnfkvykoroite3lzxbnna",
+    "Allow group cloudnative-admins to read compartments in compartment ocid1.compartment.oc1..aaaaaaaal7vn7wsy3qgizklrlfgo2vllfta3wkqlnfkvykoroite3lzxbnna",
+    "Allow service devops to manage devops-family in compartment ocid1.compartment.oc1..aaaaaaaal7vn7wsy3qgizklrlfgo2vllfta3wkqlnfkvykoroite3lzxbnna",
+    "Allow service devops to use virtual-network-family in compartment ocid1.compartment.oc1..aaaaaaaal7vn7wsy3qgizklrlfgo2vllfta3wkqlnfkvykoroite3lzxbnna",
+    "Allow service devops to read secret-family in compartment ocid1.compartment.oc1..aaaaaaaal7vn7wsy3qgizklrlfgo2vllfta3wkqlnfkvykoroite3lzxbnna",
+    "Allow service devops to read repos in compartment ocid1.compartment.oc1..aaaaaaaal7vn7wsy3qgizklrlfgo2vllfta3wkqlnfkvykoroite3lzxbnna",
+    "Allow service resource-manager to manage all-resources in compartment ocid1.compartment.oc1..aaaaaaaal7vn7wsy3qgizklrlfgo2vllfta3wkqlnfkvykoroite3lzxbnna",
+    "Allow service oke to manage cluster-family in compartment ocid1.compartment.oc1..aaaaaaaal7vn7wsy3qgizklrlfgo2vllfta3wkqlnfkvykoroite3lzxbnna",
+    "Allow service oke to manage node-pools in compartment ocid1.compartment.oc1..aaaaaaaal7vn7wsy3qgizklrlfgo2vllfta3wkqlnfkvykoroite3lzxbnna",
+    "Allow service oke to use subnets in compartment ocid1.compartment.oc1..aaaaaaaal7vn7wsy3qgizklrlfgo2vllfta3wkqlnfkvykoroite3lzxbnna",
+    "Allow service oke to use vnics in compartment ocid1.compartment.oc1..aaaaaaaal7vn7wsy3qgizklrlfgo2vllfta3wkqlnfkvykoroite3lzxbnna",
+    "Allow service oke to use load-balancers in compartment ocid1.compartment.oc1..aaaaaaaal7vn7wsy3qgizklrlfgo2vllfta3wkqlnfkvykoroite3lzxbnna",
+    "Allow service oke to use network-security-groups in compartment ocid1.compartment.oc1..aaaaaaaal7vn7wsy3qgizklrlfgo2vllfta3wkqlnfkvykoroite3lzxbnna"
+  ]
+}
