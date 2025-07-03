@@ -1,0 +1,7 @@
+schema_version: 20180708
+name: uuid-nodejs
+version: 0.0.1
+runtime: node
+entrypoint: node index.js
+memory: 128
+timeout: 30

@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: base-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: base-app
+  template:
+    metadata:
+      labels:
+        app: base-app
+    spec:
+      containers:
+      - name: base-app
+        image: <your_ocir>/<tenancy_namespace>/base-app:latest
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: base-app
+spec:
+  type: LoadBalancer
+  selector:
+    app: base-app
+  ports:
+  - port: 80
+    targetPort: 8080
