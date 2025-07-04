@@ -1,9 +1,10 @@
-FROM eclipse-temurin:17-jdk-alpine as builder
+FROM maven:3.9-eclipse-temurin-17-alpine AS builder
 WORKDIR /app
 COPY . .
-RUN ./mvnw clean package -DskipTests
+RUN mvn clean package -DskipTests
+RUN ls -lh /app/target  # <---- temporal para debug
 
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
-COPY --from=builder /app/target/springbank-portal-0.0.1-SNAPSHOT.jar app.jar
+COPY --from=builder /app/target/*.jar app.jar
 ENTRYPOINT ["java", "-jar", "app.jar"]

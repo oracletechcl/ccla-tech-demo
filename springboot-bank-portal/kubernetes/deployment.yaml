@@ -16,7 +16,8 @@ spec:
     spec:
       containers:
         - name: springbank-portal
-          image: phx.ocir.io/<tenancy-namespace>/<repo>/springbank-portal:latest
+          image: docker.io/dralquinta/bank-landing:v1
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
