@@ -1,0 +1,10 @@
+/*!
+ * Bootstrap v5.3.0 (https://getbootstrap.com/)
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
+ */
+body {margin:0;font-family:system-ui,sans-serif;background:#f9f9f9;}
+h1,h5 {font-weight:500;}
+.btn {padding:0.5rem 1rem;border:none;border-radius:4px;}
+.btn-primary{background-color:#004481;color:#fff;}
+.btn-success{background-color:#00a886;color:#fff;}
+.btn-danger{background-color:#d22f2f;color:#fff;}

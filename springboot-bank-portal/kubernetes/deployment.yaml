@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: springbank-portal
+  labels:
+    app: springbank-portal
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: springbank-portal
+  template:
+    metadata:
+      labels:
+        app: springbank-portal
+    spec:
+      containers:
+        - name: springbank-portal
+          image: phx.ocir.io/<tenancy-namespace>/<repo>/springbank-portal:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "production"

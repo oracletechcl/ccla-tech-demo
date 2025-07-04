@@ -1,7 +1,0 @@
-schema_version: 20180708
-name: greeting-python
-version: 0.0.1
-runtime: python
-entrypoint: python3 func.py
-memory: 128
-timeout: 30
