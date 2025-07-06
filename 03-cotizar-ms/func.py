@@ -4,14 +4,16 @@ from typing import List
 from sqlalchemy import create_engine, select, insert, update, delete
 from sqlalchemy.orm import sessionmaker
 from models import metadata, cotizacion, producto, precios_consumo
-from auth import get_current_user  # JWT validation
+from auth import get_current_user
 import config
 import datetime
+from fastapi.responses import RedirectResponse
 
 app = FastAPI(
     title="Cotizador de Créditos de Consumo",
     version="1.0.0",
-    docs_url="/api-docs"
+    docs_url="/cotizar/swagger-ui/index.html",
+    openapi_url="/cotizar/openapi.json"
 )
 
 engine = create_engine(config.DATABASE_URL)
@@ -56,6 +58,7 @@ class CotizacionCreate(BaseModel):
     cae: float
 
 # ----------- DB Dependency -----------
+
 def get_db():
     db = SessionLocal()
     try:
@@ -65,7 +68,7 @@ def get_db():
 
 # ----------- CRUD Precios Consumo -----------
 
-@app.post("/precios/", response_model=PrecioConsumo)
+@app.post("/precios/", response_model=PrecioConsumo, tags=["Precios"])
 def crear_precio(
     precio_in: PrecioConsumoCreate,
     user=Depends(get_current_user),
@@ -82,7 +85,7 @@ def crear_precio(
         "created_at": now
     }
 
-@app.get("/precios/", response_model=List[PrecioConsumo])
+@app.get("/precios/", response_model=List[PrecioConsumo], tags=["Precios"])
 def listar_precios(
     user=Depends(get_current_user),
     db=Depends(get_db)
@@ -90,7 +93,7 @@ def listar_precios(
     result = db.execute(select(precios_consumo))
     return [dict(row._mapping) for row in result]
 
-@app.put("/precios/{precio_id}", response_model=PrecioConsumo)
+@app.put("/precios/{precio_id}", response_model=PrecioConsumo, tags=["Precios"])
 def actualizar_precio(
     precio_id: int,
     precio_in: PrecioConsumoCreate,
@@ -105,7 +108,7 @@ def actualizar_precio(
     r = db.execute(select(precios_consumo).where(precios_consumo.c.id == precio_id)).first()
     return dict(r._mapping)
 
-@app.delete("/precios/{precio_id}")
+@app.delete("/precios/{precio_id}", tags=["Precios"])
 def eliminar_precio(
     precio_id: int,
     user=Depends(get_current_user),
@@ -117,9 +120,9 @@ def eliminar_precio(
         raise HTTPException(status_code=404, detail="Precio no encontrado")
     return {"detail": "Precio eliminado"}
 
-# ----------- CRUD Cotizaciones (Asociadas a usuario) -----------
+# ----------- CRUD Cotizaciones -----------
 
-@app.post("/cotizaciones/", response_model=Cotizacion)
+@app.post("/cotizaciones/", response_model=Cotizacion, tags=["Cotizaciones"])
 def crear_cotizacion(
     cotizacion_in: CotizacionCreate,
     user=Depends(get_current_user),
@@ -147,16 +150,15 @@ def crear_cotizacion(
         "created_at": now
     }
 
-@app.get("/cotizaciones/", response_model=List[Cotizacion])
+@app.get("/cotizaciones/", response_model=List[Cotizacion], tags=["Cotizaciones"])
 def listar_cotizaciones(
     user=Depends(get_current_user),
     db=Depends(get_db)
 ):
-    # Solo lista cotizaciones del usuario autenticado
     result = db.execute(select(cotizacion).where(cotizacion.c.usuario_id == user["id"]))
     return [dict(row._mapping) for row in result]
 
-@app.get("/cotizaciones/{cotizacion_id}", response_model=Cotizacion)
+@app.get("/cotizaciones/{cotizacion_id}", response_model=Cotizacion, tags=["Cotizaciones"])
 def obtener_cotizacion(
     cotizacion_id: int,
     user=Depends(get_current_user),
@@ -171,7 +173,7 @@ def obtener_cotizacion(
         return dict(result._mapping)
     raise HTTPException(status_code=404, detail="Cotización no encontrada")
 
-@app.put("/cotizaciones/{cotizacion_id}", response_model=Cotizacion)
+@app.put("/cotizaciones/{cotizacion_id}", response_model=Cotizacion, tags=["Cotizaciones"])
 def actualizar_cotizacion(
     cotizacion_id: int,
     cotizacion_in: CotizacionCreate,
@@ -196,7 +198,7 @@ def actualizar_cotizacion(
     r = db.execute(select(cotizacion).where(cotizacion.c.id == cotizacion_id)).first()
     return dict(r._mapping)
 
-@app.delete("/cotizaciones/{cotizacion_id}")
+@app.delete("/cotizaciones/{cotizacion_id}", tags=["Cotizaciones"])
 def eliminar_cotizacion(
     cotizacion_id: int,
     user=Depends(get_current_user),
@@ -212,6 +214,16 @@ def eliminar_cotizacion(
         raise HTTPException(status_code=404, detail="Cotización no encontrada")
     return {"detail": "Cotización eliminada"}
 
-@app.get("/health")
+# ----------- Endpoints Públicos -----------
+
+@app.get("/cotizar", tags=["Estado del Servicio"])
+def cotizar_info():
+    return {"message": "Cotizar servicio activo"}
+
+@app.get("/cotizar/swagger", include_in_schema=False)
+def redirigir_swagger():
+    return RedirectResponse(url="/cotizar/swagger-ui/index.html")
+
+@app.get("/health", tags=["Estado del Servicio"])
 def health():
     return {"status": "ok"}
