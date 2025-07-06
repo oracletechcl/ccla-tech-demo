@@ -3,6 +3,8 @@ DATABASE_PORT = "3306"
 USER = "admin"
 PASSWORD = "Welcome1."
 DB_NAME = "agenda_ms"
+ 
+
 
 DATABASE_URL = f"mysql+pymysql://{USER}:{PASSWORD}@{DATABASE_IP}:{DATABASE_PORT}/{DB_NAME}"
 
