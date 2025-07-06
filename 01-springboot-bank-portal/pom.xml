@@ -22,12 +22,9 @@
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-thymeleaf</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+        <!-- Add any other needed dependencies here (JPA, Security, etc.) -->
     </dependencies>
 
     <properties>
@@ -46,5 +43,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

@@ -1,12 +1,33 @@
 import React from 'react';
 import { Container, Typography, Button, Card, CardContent, Grid, Box, Paper, Divider, List, ListItem, ListItemText } from '@mui/material';
 
-export default function Home() {
+export default function Home({ user, onLogout }) {
   return (
     <Container maxWidth="md" sx={{ my: 4 }}>
       {/* Banner */}
-      <Paper elevation={4} sx={{ background: 'linear-gradient(90deg, #003366 60%, #00c6d7 100%)', p: 4, mb: 3, color: '#fff', textAlign: 'center' }}>
+      <Paper
+        elevation={4}
+        sx={{
+          background: 'linear-gradient(90deg, #003366 60%, #00c6d7 100%)',
+          p: 4,
+          mb: 3,
+          color: '#fff',
+          textAlign: 'center',
+          position: 'relative'
+        }}
+      >
         <Typography variant="h3" fontWeight="bold">Portal Bancario</Typography>
+        <Typography variant="subtitle1" sx={{ position: 'absolute', left: 32, top: 32 }}>
+          Bienvenido{user?.name ? `, ${user.name}` : ""}
+        </Typography>
+        <Button
+          color="inherit"
+          variant="outlined"
+          onClick={onLogout}
+          sx={{ position: 'absolute', right: 32, top: 32 }}
+        >
+          Cerrar sesión
+        </Button>
       </Paper>
       <Grid container spacing={3}>
         {/* Actions */}

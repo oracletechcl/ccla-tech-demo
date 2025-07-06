@@ -1,21 +1,32 @@
 #!/bin/bash
 
 # ---------- CONFIGURACIÓN ----------
-DOCKERHUB_USERNAME="dralquinta"   # 🔁 Reemplaza con tu usuario Docker Hub
+DOCKERHUB_USERNAME="dralquinta"
 REPO_NAME="bank-landing"
 TAG="v1"
 FULL_IMAGE="${DOCKERHUB_USERNAME}/${REPO_NAME}:${TAG}"
 
-
 # ---------- CONSTRUCCIÓN ----------
-echo "🔧 Construyendo imagen Docker..."
-docker build -t ${FULL_IMAGE} .
+echo "🔧 Building Docker Image..."
+if ! docker build -t ${FULL_IMAGE} .; then
+    echo "❌ Error: Failure in Docker image construction. No further actions will be done. Fix and retry"
+    exit 1
+fi
 
 # ---------- PUSH ----------
-echo "🚀 Subiendo imagen a Docker Hub..."
-docker push ${FULL_IMAGE}
+echo "🚀 Uploading image to Docker Hub..."
+if ! docker push ${FULL_IMAGE}; then
+    echo "❌ Error: Failure in docker push. Fix and retry."
+    exit 1
+fi
 
 echo "✅ Imagen subida correctamente: ${FULL_IMAGE}"
 
-echo "Reiniciando deployment"
-kubectl rollout restart deployment springbank-portal
+# ---------- REINICIAR DEPLOYMENT ----------
+echo "♻️  Reiniciando deployment"
+if ! kubectl rollout restart deployment springbank-portal; then
+    echo "⚠️  Warning: Deployment restart failed. Check status with kubectl or k9s."
+    exit 1
+fi
+
+echo "🏁 Build and push completed successfully."
