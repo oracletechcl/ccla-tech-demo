@@ -1,0 +1,105 @@
+# ############################################################################
+# ## Archivo .gitignore para Oracle Functions + Python                      ##
+# ## Creado por: CSA - Cloud Solutions Architect                            ##
+# ## Fecha: 07/07/2025                                                      ##
+# ############################################################################
+
+# Entornos Virtuales de Python
+# ----------------------------------------------------------------------------
+# Excluye los directorios de entornos virtuales. El nombre puede variar, así que
+# se incluyen los más comunes como 'venv', '.venv', 'env', etc.
+/venv/
+/.venv/
+/env/
+/virtualenv/
+/pyenv/
+/.python-version
+
+# Archivos de Cache y compilados de Python
+# ----------------------------------------------------------------------------
+# Excluye los archivos de bytecode y cachés que Python genera automáticamente.
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Archivos de Distribución y Construcción
+# ----------------------------------------------------------------------------
+# Excluye los artefactos generados al empaquetar tu función para el despliegue.
+/dist/
+/build/
+/*.egg-info/
+/.eggs/
+/pip-wheel-metadata/
+/share/python-wheels/
+/*.manifest
+/*.spec
+
+# Archivos de Dependencias de Pip
+# ----------------------------------------------------------------------------
+# El archivo requirements.txt DEBE estar en el repo, pero estos no.
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Archivos de Configuración de IDEs y Editores
+# ----------------------------------------------------------------------------
+# Excluye archivos y directorios específicos de entornos de desarrollo populares.
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.project
+.pydevproject
+.spyderproject
+.ropeproject
+
+# Archivos del Sistema Operativo
+# ----------------------------------------------------------------------------
+# Archivos autogenerados por macOS, Windows y Linux.
+.DS_Store
+Thumbs.db
+desktop.ini
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Archivos de Oracle Cloud Infrastructure (OCI)
+# ----------------------------------------------------------------------------
+# Archivos de configuración local y credenciales de OCI que NUNCA deben
+# subirse a un repositorio por seguridad.
+.oci/
+oci_api_key.pem
+oci_api_key_public.pem
+
+# Archivos de Pruebas (Testing)
+# ----------------------------------------------------------------------------
+# Excluye artefactos y reportes generados durante la ejecución de pruebas.
+.pytest_cache/
+.tox/
+/htmlcov/
+/.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*,cover
+*.log
+.hypothesis/
+
+# Archivos de Notebooks (Jupyter)
+# ----------------------------------------------------------------------------
+# Excluye los checkpoints de Jupyter Notebook que se crean automáticamente.
+.ipynb_checkpoints
+
+# Archivos de configuración local de la aplicación
+# ----------------------------------------------------------------------------
+# Si tienes archivos de configuración local (ej. local.yaml, .env) que
+# contienen secretos o configuraciones específicas de tu máquina, exclúyelos.
+.env
+local.yaml
+config.local.json
+
+# ############################################################################
+# ## Fin del archivo .gitignore                                             ##
+# ############################################################################
