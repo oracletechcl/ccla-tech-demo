@@ -5,7 +5,7 @@
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.example</groupId>
-    <artifactId>landing</artifactId>
+    <artifactId>bankportal</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
@@ -40,14 +40,11 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>3.2.4</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <configuration>
+                    <mainClass>com.example.bankportal.BankPortalApplication</mainClass>
+                </configuration>
             </plugin>
         </plugins>
     </build>
+
 </project>
