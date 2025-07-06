@@ -1,0 +1,45 @@
+# --- Maven ---
+target/
+*.iml
+*.class
+*.log
+logs/
+*.swp
+
+# --- Node / React frontend ---
+frontend/node_modules/
+frontend/build/
+frontend/.env
+frontend/.env.*
+
+# --- IDE / Editor / System ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.sublime-workspace
+*.sublime-project
+
+# --- OS X / System Files ---
+.AppleDouble
+.LSOverride
+Icon?
+__MACOSX/
+
+# --- Git ---
+.git
+.gitignore
+
+# --- Test / Coverage ---
+coverage/
+**/test-output/
+**/surefire-reports/
+**/failsafe-reports/
+
+# --- Docker ---
+*.tar
+
+# --- Miscellaneous ---
+*.tmp
+*.bak
+*.orig
