@@ -1,0 +1,1 @@
+uvicorn func:app --reload --port 8080
