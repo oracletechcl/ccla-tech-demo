@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pagar-ms-ingress
+  namespace: pagar-ms-namespace
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: portal.banco.local
+      http:
+        paths:
+          - path: /pagar
+            pathType: Prefix
+            backend:
+              service:
+                name: pagar-ms
+                port:
+                  number: 80
+
+
+
+
+
