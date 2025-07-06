@@ -1,35 +1,32 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+set -e  # Exit on any error
 
-# Usage: ./build-and-deploy.sh <ocir-namespace> <repo-name> <region> <tag>
-# Example: ./build-and-deploy.sh axaxxx base-app phx v1
+# ---------- CONFIGURACIÓN ----------
+DOCKERHUB_USERNAME="dralquinta"
+REPO_NAME="bank-landing"
+TAG="v1"
+FULL_IMAGE="${DOCKERHUB_USERNAME}/${REPO_NAME}:${TAG}"
 
-if [ "$#" -ne 4 ]; then
-  echo "Usage: $0 <ocir-namespace> <repo-name> <region> <tag>"
-  exit 1
+# ---------- LOGIN ----------
+echo "🔐 Iniciando sesión en Docker Hub..."
+docker login -u "${DOCKERHUB_USERNAME}"
+
+# ---------- BUILD MAVEN ----------
+echo "⚙️  Construyendo artefacto Maven..."
+if [[ -x "./mvnw" ]]; then
+    ./mvnw clean package -DskipTests
+else
+    mvn clean package -DskipTests
 fi
 
-NAMESPACE="$1"
-REPO="$2"
-REGION="$3"
-TAG="$4"
+echo "✅ Build Maven OK"
 
-IMAGE="$REGION.ocir.io/$NAMESPACE/$REPO:$TAG"
+# ---------- DOCKER BUILD ----------
+echo "🔧 Construyendo imagen Docker..."
+docker build -t "${FULL_IMAGE}" .
+echo "✅ Imagen Docker creada correctamente"
 
-# Build Docker image
-
-echo "[1/3] Building Docker image: $IMAGE"
-docker build -t "$IMAGE" .
-
-# Login to OCIR
-
-echo "[2/3] Logging in to OCIR: $REGION.ocir.io"
-echo "Enter your OCIR auth token (not your password):"
-docker login "$REGION.ocir.io" -u "$NAMESPACE/$(whoami)" --password-stdin
-
-# Push Docker image
-
-echo "[3/3] Pushing Docker image to OCIR"
-docker push "$IMAGE"
-
-echo "Image pushed: $IMAGE"
+# ---------- PUSH ----------
+echo "🚀 Subiendo imagen a Docker Hub..."
+docker push "${FULL_IMAGE}"
+echo "✅ Imagen subida correctamente: ${FULL_IMAGE}"
