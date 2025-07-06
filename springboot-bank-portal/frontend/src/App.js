@@ -1,7 +1,7 @@
 import React from 'react';
 import { Container, Typography, Button, Card, CardContent, Grid, Box, Paper, Divider, List, ListItem, ListItemText } from '@mui/material';
 
-export default function Home() {
+export default function App() {
   return (
     <Container maxWidth="md" sx={{ my: 4 }}>
       {/* Banner */}
