@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pagar-ms
+  namespace: pagar-ms-namespace
+  labels:
+    app: pagar-ms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pagar-ms
+  template:
+    metadata:
+      labels:
+        app: pagar-ms
+    spec:
+      containers:
+        - name: pagar-ms
+          image: docker.io/dralquinta/pagar-ms:v1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "production"

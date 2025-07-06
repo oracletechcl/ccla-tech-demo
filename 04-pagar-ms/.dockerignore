@@ -1,0 +1,14 @@
+# Ignora carpetas y archivos innecesarios para la imagen
+target/
+.idea/
+*.iml
+*.log
+*.md
+.DS_Store
+.git/
+.gitignore
+.vscode/
+.env
+*.bat
+*.sh
+docker-compose*

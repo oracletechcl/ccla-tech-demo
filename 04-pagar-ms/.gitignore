@@ -1,0 +1,46 @@
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+
+# Maven
+/target/
+/pom.xml.tag
+/pom.xml.releaseBackup
+/pom.xml.versionsBackup
+/logs/
+/release.properties
+
+# IDEs
+/.idea/
+/*.iws
+/*.ipr
+/*.iml
+/.classpath
+/.project
+/.settings/
+/bin/
+/*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+.env
+*.local
+*.env
+# Docker build cache
+**/docker-cache/
+**/.docker-cache/
+
+# Spring Boot
+spring.log
+
+# VSCode
+.vscode/
+
+.mvn
