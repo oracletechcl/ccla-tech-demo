@@ -4,19 +4,24 @@ from typing import List
 from sqlalchemy import create_engine, select, insert, update, delete
 from sqlalchemy.orm import sessionmaker
 from models import metadata, reserva
-from auth import get_current_user  # <--- Nuevo import para autenticación JWT
+from auth import get_current_user  # Autenticación JWT
 import config
 import datetime
+from fastapi.responses import RedirectResponse
 
 app = FastAPI(
     title="Agenda de Visitas CRUD",
     version="1.0.0",
-    docs_url="/api-docs"
+    docs_url="/agendar/swagger-ui/index.html",
+    openapi_url="/agendar/openapi.json"
 )
 
+# Conexión DB
 engine = create_engine(config.DATABASE_URL)
 metadata.create_all(engine)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# -------- Esquemas --------
 
 class Reserva(BaseModel):
     id: int
@@ -31,6 +36,8 @@ class ReservaCreate(BaseModel):
     fecha: datetime.date
     hora: datetime.time
 
+# -------- Dependencia DB --------
+
 def get_db():
     db = SessionLocal()
     try:
@@ -40,10 +47,10 @@ def get_db():
 
 # -------- ENDPOINTS --------
 
-@app.post("/reservas/", response_model=Reserva)
+@app.post("/reservas/", response_model=Reserva, tags=["Reservas"])
 def crear_reserva(
     reserva_in: ReservaCreate,
-    user=Depends(get_current_user),  # Usuario autenticado del token
+    user=Depends(get_current_user),
     db=Depends(get_db)
 ):
     now = datetime.datetime.utcnow()
@@ -64,22 +71,20 @@ def crear_reserva(
         "created_at": now
     }
 
-@app.get("/reservas/", response_model=List[Reserva])
+@app.get("/reservas/", response_model=List[Reserva], tags=["Reservas"])
 def listar_reservas(
     user=Depends(get_current_user),
     db=Depends(get_db)
 ):
-    # Solo lista las reservas del usuario autenticado
     result = db.execute(select(reserva).where(reserva.c.usuario_id == user["id"]))
     return [dict(row._mapping) for row in result]
 
-@app.get("/reservas/{reserva_id}", response_model=Reserva)
+@app.get("/reservas/{reserva_id}", response_model=Reserva, tags=["Reservas"])
 def obtener_reserva(
     reserva_id: int,
     user=Depends(get_current_user),
     db=Depends(get_db)
 ):
-    # Solo puede obtener reservas propias
     result = db.execute(
         select(reserva).where(
             (reserva.c.id == reserva_id) & (reserva.c.usuario_id == user["id"])
@@ -89,7 +94,7 @@ def obtener_reserva(
         return dict(result._mapping)
     raise HTTPException(status_code=404, detail="Reserva no encontrada")
 
-@app.put("/reservas/{reserva_id}", response_model=Reserva)
+@app.put("/reservas/{reserva_id}", response_model=Reserva, tags=["Reservas"])
 def actualizar_reserva(
     reserva_id: int,
     reserva_in: ReservaCreate,
@@ -107,11 +112,10 @@ def actualizar_reserva(
     db.commit()
     if result.rowcount == 0:
         raise HTTPException(status_code=404, detail="Reserva no encontrada")
-    # Retornar los datos actualizados
     r = db.execute(select(reserva).where(reserva.c.id == reserva_id)).first()
     return dict(r._mapping)
 
-@app.delete("/reservas/{reserva_id}")
+@app.delete("/reservas/{reserva_id}", tags=["Reservas"])
 def eliminar_reserva(
     reserva_id: int,
     user=Depends(get_current_user),
@@ -127,6 +131,16 @@ def eliminar_reserva(
         raise HTTPException(status_code=404, detail="Reserva no encontrada")
     return {"detail": "Reserva eliminada"}
 
-@app.get("/health")
+# -------- ENDPOINTS INFORMACION --------
+
+@app.get("/agendar", tags=["Estado del Servicio"])
+def agendar_info():
+    return {"message": "Agendar servicio activo"}
+
+@app.get("/agendar/swagger", include_in_schema=False)
+def redirigir_a_swagger():
+    return RedirectResponse(url="/agendar/swagger-ui/index.html")
+
+@app.get("/health", tags=["Estado del Servicio"])
 def health():
     return {"status": "ok"}
