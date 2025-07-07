@@ -9,7 +9,12 @@ const verifyJWT = require('./jwtMiddleware');
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: 'https://portalbancario.alquinta.xyz', // frontend productivo
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Authorization', 'Content-Type'],
+}));
 
 // --- Swagger/OpenAPI ---
 const swaggerOptions = {

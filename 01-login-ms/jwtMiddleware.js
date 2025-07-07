@@ -1,6 +1,11 @@
 const jwt = require('jsonwebtoken');
 
 function verifyJWT(req, res, next) {
+  // Permitir preflight sin validación de JWT
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+
   const authHeader = req.headers['authorization'];
   if (!authHeader) return res.status(401).json({ error: 'Falta header Authorization' });
 
