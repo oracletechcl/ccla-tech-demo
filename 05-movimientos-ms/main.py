@@ -1,7 +1,14 @@
 from fastapi import FastAPI, Depends
 from fastapi.responses import RedirectResponse
 from auth import get_current_user
-from generator import iniciar_generador, movimientos_por_usuario, saldos_por_usuario
+from generator import (
+    generar_lote_de_movimientos,
+    obtener_movimientos,
+    obtener_saldo,
+    obtener_resumen
+)
+from models import Movimiento
+from typing import List
 
 app = FastAPI(
     title="Microservicio de Movimientos Bancarios",
@@ -10,28 +17,21 @@ app = FastAPI(
     openapi_url="/movimientos/openapi.json"
 )
 
-@app.on_event("startup")
-def startup_event():
-    iniciar_generador()
-
-@app.get("/movimientos", tags=["Movimientos"])
+@app.get("/movimientos", response_model=List[Movimiento], tags=["Movimientos"])
 def listar_movimientos(user=Depends(get_current_user)):
-    return movimientos_por_usuario.get(user["id"], [])
+    user_id = str(user.get("id") or user.get("sub"))
+    generar_lote_de_movimientos(user_id, cantidad=5)
+    return obtener_movimientos(user_id)
 
 @app.get("/movimientos/saldo", tags=["Resumen"])
-def obtener_saldo(user=Depends(get_current_user)):
-    data = saldos_por_usuario.get(user["id"], {"saldo": 0.0})
-    return {"saldo_actual": round(data["saldo"], 2)}
+def saldo(user=Depends(get_current_user)):
+    user_id = str(user.get("id") or user.get("sub"))
+    return {"saldo_actual": obtener_saldo(user_id)}
 
-@app.get("/movimientos/ingresos", tags=["Resumen"])
-def obtener_ingresos(user=Depends(get_current_user)):
-    data = saldos_por_usuario.get(user["id"], {"ingresos": 0.0})
-    return {"total_ingresos": round(data["ingresos"], 2)}
-
-@app.get("/movimientos/egresos", tags=["Resumen"])
-def obtener_egresos(user=Depends(get_current_user)):
-    data = saldos_por_usuario.get(user["id"], {"egresos": 0.0})
-    return {"total_egresos": round(data["egresos"], 2)}
+@app.get("/movimientos/resumen", tags=["Resumen"])
+def resumen(user=Depends(get_current_user)):
+    user_id = str(user.get("id") or user.get("sub"))
+    return obtener_resumen(user_id)
 
 @app.get("/movimientos/swagger", include_in_schema=False)
 def redirigir_swagger():
