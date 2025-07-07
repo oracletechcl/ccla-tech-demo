@@ -4,6 +4,10 @@ metadata:
   name: cc-movimientos-ms-ingress
   namespace: cc-movimientos-ms-namespace
 spec:
+  tls:
+    - hosts:
+      - portalbancario.alquinta.xyz
+      secretName: tls-secret-key
   ingressClassName: nginx
   rules:
     - host: portalbancario.alquinta.xyz
