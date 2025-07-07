@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: movimientos-ms-ingress
+  namespace: movimientos-ms-namespace
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: portal.banco.local
+      http:
+        paths:
+          - path: /movimientos
+            pathType: Prefix
+            backend:
+              service:
+                name: movimientos-ms
+                port:
+                  number: 80
+
+
+
+
+

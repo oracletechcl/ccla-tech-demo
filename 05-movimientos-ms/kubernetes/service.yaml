@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: movimientos-ms
+  namespace: movimientos-ms-namespace
+spec:
+  selector:
+    app: movimientos-ms
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: ClusterIP
