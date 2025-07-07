@@ -1,5 +1,9 @@
 # login-ms — Microservicio de Autenticación (Node.js + Express)
 
+**NOTA** Este servicio fue desplegado en: OCI Container Instance. 
+
+Su swagger esta disponible en: http://192.18.141.177/api-docs/ 
+
 Este microservicio provee un endpoint `/login` para autenticar usuarios, y se puede utilizar como backend para aplicaciones tipo portal bancario. Ideal para pruebas en OCI (Oracle Cloud Infrastructure) como Container Instance, OKE, o incluso OCI Functions (con pequeños ajustes).
 
 ---
