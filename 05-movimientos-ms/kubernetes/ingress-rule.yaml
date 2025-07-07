@@ -6,7 +6,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: portal.banco.local
+    - host: portalbancario.alquinta.xyz
       http:
         paths:
           - path: /movimientos
