@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cc-movimientos-ms-svc
+  namespace: cc-movimientos-ms-namespace
+spec:
+  selector:
+    app: cc-movimientos-ms
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: ClusterIP

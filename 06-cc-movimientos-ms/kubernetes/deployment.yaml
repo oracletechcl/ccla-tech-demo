@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cc-movimientos-ms
+  namespace: cc-movimientos-ms-namespace
+  labels:
+    app: cc-movimientos-ms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cc-movimientos-ms
+  template:
+    metadata:
+      labels:
+        app: cc-movimientos-ms
+    spec:
+      containers:
+        - name: cc-movimientos-ms
+          image: docker.io/dralquinta/cc-movimientos-ms:v1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+
