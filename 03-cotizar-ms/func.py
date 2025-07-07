@@ -11,6 +11,7 @@ from fastapi.responses import RedirectResponse
 
 app = FastAPI(
     title="Cotizador de Créditos de Consumo",
+    root_path="/cotizar",
     version="1.0.0",
     docs_url="/cotizar/swagger-ui/index.html",
     openapi_url="/cotizar/openapi.json"

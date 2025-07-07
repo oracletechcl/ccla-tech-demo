@@ -12,6 +12,7 @@ from fastapi.responses import RedirectResponse
 app = FastAPI(
     title="Agenda de Visitas CRUD",
     version="1.0.0",
+    root_path="/agendar",
     docs_url="/agendar/swagger-ui/index.html",
     openapi_url="/agendar/openapi.json"
 )
