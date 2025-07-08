@@ -1,29 +1,30 @@
 from fastapi import FastAPI, HTTPException, Depends
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from typing import List
 from sqlalchemy import create_engine, select, insert, update, delete
 from sqlalchemy.orm import sessionmaker
 from models import metadata, reserva
-from auth import get_current_user  # Autenticación JWT
+from auth import get_current_user
 import config
 import datetime
-from fastapi.responses import RedirectResponse
 
+# --- Inicialización FastAPI ---
 app = FastAPI(
     title="Agenda de Visitas CRUD",
     version="1.0.0",
-    root_path="/agendar",
+    root_path="/agendar",  # Mantener solo si el API Gateway enruta /agendar/* hacia este backend
     docs_url="/agendar/swagger-ui/index.html",
-    openapi_url="/agendar/openapi.json"
+    openapi_url="/agendar/openapi.json",
+    redirect_slashes=True
 )
 
-# Conexión DB
+# --- Conexión DB ---
 engine = create_engine(config.DATABASE_URL)
 metadata.create_all(engine)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # -------- Esquemas --------
-
 class Reserva(BaseModel):
     id: int
     usuario_id: int
@@ -38,7 +39,6 @@ class ReservaCreate(BaseModel):
     hora: datetime.time
 
 # -------- Dependencia DB --------
-
 def get_db():
     db = SessionLocal()
     try:
