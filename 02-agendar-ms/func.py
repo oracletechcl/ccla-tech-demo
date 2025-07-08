@@ -13,9 +13,9 @@ import datetime
 app = FastAPI(
     title="Agenda de Visitas CRUD",
     version="1.0.0",
-    root_path="/agendar",  # Mantener solo si el API Gateway enruta /agendar/* hacia este backend
-    docs_url="/agendar/swagger-ui/index.html",
-    openapi_url="/agendar/openapi.json",
+    root_path="/agendar",  # requerido si el API Gateway enruta usando /agendar/*
+    docs_url="/swagger-ui/index.html",  # se combinará con root_path
+    openapi_url="/openapi.json",
     redirect_slashes=True
 )
 
@@ -134,14 +134,22 @@ def eliminar_reserva(
 
 # -------- ENDPOINTS INFORMACION --------
 
-@app.get("/agendar", tags=["Estado del Servicio"])
+@app.get("/", tags=["Estado del Servicio"])
 def agendar_info():
     return {"message": "Agendar servicio activo"}
 
-@app.get("/agendar/swagger", include_in_schema=False)
+@app.get("/swagger", include_in_schema=False)
 def redirigir_a_swagger():
     return RedirectResponse(url="/agendar/swagger-ui/index.html")
 
 @app.get("/health", tags=["Estado del Servicio"])
 def health():
     return {"status": "ok"}
+
+# -------- Middleware de depuración opcional --------
+
+@app.middleware("http")
+async def log_request_path(request, call_next):
+    print(f"[DEBUG] {request.url.path}")
+    response = await call_next(request)
+    return response
