@@ -1,41 +1,58 @@
 import io
 import json
 import datetime
+from auth import get_current_user
+from sqlalchemy import create_engine, insert
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import insert
-from shared.models import reserva, metadata
-from shared.auth import get_current_user
-from shared.config import DATABASE_URL
-from sqlalchemy import create_engine
+from models import metadata, reserva
+import config
 
 def handler(ctx, data: io.BytesIO = None):
     try:
-        payload = json.loads(data.read())
+        # Leer y validar input JSON
+        body = json.loads(data.read())
+        sucursal = body.get("sucursal")
+        fecha = body.get("fecha")
+        hora = body.get("hora")
+
+        if not all([sucursal, fecha, hora]):
+            return json.dumps({"status": "error", "message": "Campos 'sucursal', 'fecha' y 'hora' son requeridos"})
+
+        fecha = datetime.date.fromisoformat(fecha)
+        hora = datetime.time.fromisoformat(hora)
+
+        # Obtener usuario autenticado
         user = get_current_user(ctx)
 
-        engine = create_engine(DATABASE_URL)
-        metadata.create_all(engine)
-        Session = sessionmaker(bind=engine)
-        db = Session()
+        # Inicializar conexión DB
+        db_url = config.DATABASE_URL
+        if not db_url:
+            raise Exception("DATABASE_URL no seteada en config")
 
+        engine = create_engine(db_url)
+        metadata.create_all(engine)
+        SessionLocal = sessionmaker(bind=engine)
+        db = SessionLocal()
+
+        # Crear reserva
         now = datetime.datetime.utcnow()
-        ins = reserva.insert().values(
+        stmt = insert(reserva).values(
             usuario_id=user["id"],
-            sucursal=payload["sucursal"],
-            fecha=payload["fecha"],
-            hora=payload["hora"],
+            sucursal=sucursal,
+            fecha=fecha,
+            hora=hora,
             created_at=now
         )
-        result = db.execute(ins)
+        result = db.execute(stmt)
         db.commit()
-        db.close()
 
         return json.dumps({
+            "status": "ok",
             "id": result.lastrowid,
             "usuario_id": user["id"],
-            "sucursal": payload["sucursal"],
-            "fecha": payload["fecha"],
-            "hora": payload["hora"],
+            "sucursal": sucursal,
+            "fecha": fecha.isoformat(),
+            "hora": hora.isoformat(),
             "created_at": now.isoformat()
         })
 

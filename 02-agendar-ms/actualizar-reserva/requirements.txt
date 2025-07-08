@@ -1,1 +1,7 @@
 fdk>=0.1.95
+fastapi
+pydantic
+pymysql
+sqlalchemy
+PyJWT
+requests

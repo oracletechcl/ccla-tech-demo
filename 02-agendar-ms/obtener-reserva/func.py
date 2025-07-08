@@ -1,19 +1,19 @@
 import io
 import json
+from auth import get_current_user
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import select
+from sqlalchemy import create_engine, select
 from shared.models import reserva, metadata
-from shared.auth import get_current_user
-from shared.config import DATABASE_URL
-from sqlalchemy import create_engine
+import config
 
 def handler(ctx, data: io.BytesIO = None):
     try:
         user = get_current_user(ctx)
 
-        # Parse reserva_id from input data
+        # Leer y validar input
         if data is None:
             return json.dumps({"status": "error", "message": "No input data provided"})
+
         try:
             body = json.loads(data.getvalue())
             reserva_id = body.get("reserva_id")
@@ -22,17 +22,24 @@ def handler(ctx, data: io.BytesIO = None):
         except Exception as ex:
             return json.dumps({"status": "error", "message": f"Invalid input: {str(ex)}"})
 
-        engine = create_engine(DATABASE_URL)
+        # Conexión DB
+        db_url = config.DATABASE_URL
+        if not db_url:
+            raise Exception("DATABASE_URL no seteada en config")
+
+        engine = create_engine(db_url)
         metadata.create_all(engine)
         Session = sessionmaker(bind=engine)
         db = Session()
 
-        result = db.execute(
-            select(reserva).where(
-                (reserva.c.usuario_id == user["id"]) & (reserva.c.id == reserva_id)
-            )
-        ).first()
-        db.close()
+        try:
+            result = db.execute(
+                select(reserva).where(
+                    (reserva.c.usuario_id == user["id"]) & (reserva.c.id == reserva_id)
+                )
+            ).first()
+        finally:
+            db.close()
 
         if result:
             return json.dumps(dict(result._mapping))
