@@ -13,7 +13,6 @@ import datetime
 app = FastAPI(
     title="Agenda de Visitas CRUD",
     version="1.0.0",
-    root_path="/agendar",  # requerido si el API Gateway enruta usando /agendar/*
     docs_url="/swagger-ui/index.html",  # se combinará con root_path
     openapi_url="/openapi.json",
     redirect_slashes=True
