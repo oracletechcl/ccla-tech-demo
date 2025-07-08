@@ -2,97 +2,104 @@
 
 # ======= EDITAR ESTAS VARIABLES =======
 APP_NAME="agendar-ms-fn"
-FUNC_NAME="agendar-ms"
 FN_CONTEXT="us-sanjose-1"
 OCI_COMPARTMENT_OCID="ocid1.compartment.oc1..aaaaaaaal7vn7wsy3qgizklrlfgo2vllfta3wkqlnfkvykoroite3lzxbnna"
+SUBNET_OCID="ocid1.subnet.oc1.us-sanjose-1.aaaaaaaa23am2rdz7db7ty5btfdndlah2tusxbv52jb3sdaehrghwdbhv7ba"
 REGION_KEY="sjc"
 OCIR_NS="idi1o0a010nx"
 OCI_USERNAME="oracleidentitycloudservice/denny.alquinta@oracle.com"
 OCI_AUTH_TOKEN="T1R;m:O3onysya}OdnaI"
-DOCKER_IMAGE="$REGION_KEY.ocir.io/$OCIR_NS/$FUNC_NAME:latest"
 EXPECTED_API_URL="https://functions.us-sanjose-1.oci.oraclecloud.com"
 # =======================================
 
-set -e
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
+echo "🔧 Validando autenticación y contexto..."
+
 # 1. Verifica autenticación OCI CLI
 if ! oci os ns get &>/dev/null; then
-    echo -e "${RED}ERROR: No estás autenticado en OCI CLI. Revisa tu configuración y credenciales.${NC}"
+    echo -e "${RED}ERROR: No estás autenticado en OCI CLI.${NC}"
     exit 1
 else
-    echo -e "${GREEN}OK: OCI CLI está autenticado.${NC}"
+    echo -e "${GREEN}✅ OCI CLI autenticado.${NC}"
 fi
+
+fn use context default
+fn list context | awk 'NR>1 && $2 != "default" {print $1}' | while read ctx; do   echo "Deleting context: $ctx";   fn delete context "$ctx"; done
+echo -e "${GREEN}✅ Borrado de contextos completado"
 
 # 2. Crear contexto si no existe
 if ! fn list context | grep -wq "$FN_CONTEXT"; then
-    echo "Contexto '$FN_CONTEXT' no existe. Creando..."
-    fn create context "$FN_CONTEXT" --provider oracle
-else
-    echo "Contexto '$FN_CONTEXT' ya existe y está sano."
+    fn create context "$FN_CONTEXT" --provider oracle    
 fi
+echo -e "${GREEN}✅ Contexto ${FN_CONTEXT} creado"
 
-# Setea la región en el contexto si no está seteada correctamente
-CURRENT_REGION=$(fn inspect context | grep 'oracle.region' | awk '{print $2}')
-if [[ "$CURRENT_REGION" != "us-sanjose-1" ]]; then
-    fn update context oracle.region us-sanjose-1
-    echo "Contexto '$FN_CONTEXT' actualizado con region us-sanjose-1."
-fi
-
-# Setea el api-url de Functions (clave para Fn CLI)
-CURRENT_API_URL=$(fn inspect context | grep "api-url" | awk '{print $2}' || true)
-if [[ "$CURRENT_API_URL" != "$EXPECTED_API_URL" ]]; then
-    fn update context api-url "$EXPECTED_API_URL"
-    echo "api-url del contexto seteado a $EXPECTED_API_URL"
-else
-    echo "api-url ya está seteado correctamente."
-fi
-
-# Usar contexto si no está activo
-CURRENT_CONTEXT=$(fn list context | grep '*' | awk '{print $2}')
-if [[ "$CURRENT_CONTEXT" != "$FN_CONTEXT" ]]; then
-    fn use context "$FN_CONTEXT" || true
-    echo "Contexto cambiado a '$FN_CONTEXT'."
-else
-    echo "Ya estás usando el contexto '$FN_CONTEXT'."
-fi
-
-# 3. Set compartment-id (idempotente)
+fn use context "$FN_CONTEXT"
+fn update context oracle.region us-sanjose-1
+fn update context api-url "$EXPECTED_API_URL"
 fn update context oracle.compartment-id "$OCI_COMPARTMENT_OCID"
-echo "Contexto '$FN_CONTEXT' actualizado con compartment OCID."
+fn update context registry "$REGION_KEY.ocir.io/$OCIR_NS"
 
-# 4. Setea Registry si no está definido
-CURRENT_REGISTRY=$(fn inspect context | grep "registry" | awk '{print $2}' || true)
-EXPECTED_REGISTRY="$REGION_KEY.ocir.io/$OCIR_NS"
-if [[ "$CURRENT_REGISTRY" != "$EXPECTED_REGISTRY" ]]; then
-    fn update context registry "$EXPECTED_REGISTRY"
-    echo "Registry actualizado: $EXPECTED_REGISTRY"
-else
-    echo "Registry ya está seteado correctamente."
-fi
+echo -e "${GREEN}✅ Setteo de Contexto ${FN_CONTEXT} OK"
 
-# 5. Docker login a OCIR (idempotente)
+# 3. Login a OCIR
 docker logout "$REGION_KEY.ocir.io" 2>/dev/null || true
-sleep 1
-echo "Haciendo login a OCIR..."
-if ! echo "$OCI_AUTH_TOKEN" | docker login "$REGION_KEY.ocir.io" -u "$OCIR_NS/$OCI_USERNAME" --password-stdin; then
-    echo "ERROR: Falló el login a OCIR. Revisa tu token, usuario y namespace."
-    exit 1
-fi
+echo "$OCI_AUTH_TOKEN" | docker login "$REGION_KEY.ocir.io" -u "$OCIR_NS/$OCI_USERNAME" --password-stdin
+echo -e "${GREEN}✅ Loggeado a OCIR OK"
 
-# 6. Verifica que exista func.yaml
-if [[ ! -f func.yaml ]]; then
-    fn init --runtime python
-    echo "fn init ejecutado (func.yaml creado)."
+# 4. Crear la aplicación si no existe
+if ! fn list apps | grep -wq "$APP_NAME"; then
+    echo "📦 Creando aplicación '$APP_NAME'..."
+    export compartment_id="$OCI_COMPARTMENT_OCID"
+    export display_name="$APP_NAME"
+    echo "[\"$SUBNET_OCID\"]" > subnet-ids.json
+    application_id=$(oci fn application create \
+        --compartment-id $compartment_id \
+        --display-name $display_name \
+        --subnet-ids file://subnet-ids.json \
+        --query data.id --raw-output)
+    echo "✅ Application created with OCID: $application_id"
 else
-    echo "func.yaml ya existe."
+    echo "📦 Aplicación '$APP_NAME' ya existe."
 fi
 
-# 7. Build y deploy function (Fn CLI se encarga del push)
-echo "Construyendo y desplegando función Fn..."
-fn -v deploy --app "$APP_NAME"
+# 5. Iterar sobre todas las carpetas de funciones
 
-echo -e "${GREEN}✅ Build & deploy completo para Oracle Functions con Fn CLI.${NC}"
+# Iterar solo sobre directorios que contienen un func.yaml (funciones)
+for dir in */; do
+    if [[ "$dir" == "shared/" ]]; then
+        continue
+    fi
+    if [[ -f "$dir/func.yaml" ]]; then
+        FUNC_DIR=${dir%/}
+        echo -e "\n🚀 Desplegando función: ${GREEN}$FUNC_DIR${NC}"
+
+        cd "$FUNC_DIR"
+
+        # Copia temporal de shared/
+        echo "📁 Copiando 'shared/' a $FUNC_DIR..."
+        cp -r ../shared ./shared
+
+        # Despliegue de función
+        if fn -v deploy --app "$APP_NAME" --no-bump; then
+            echo -e "${GREEN}✅ Desplegada $FUNC_DIR${NC}"
+        else
+            echo -e "${RED}❌ Error al desplegar $FUNC_DIR${NC}"
+        fi
+
+        # Limpieza
+        echo "🧹 Eliminando 'shared/' temporal de $FUNC_DIR..."
+        rm -rf shared
+        cd ..
+        [ -f subnet-ids.json ] && rm subnet-ids.json
+    else
+        echo "⚠️  El directorio $dir no contiene func.yaml, se omite."
+    fi
+done
+
+
+
+echo -e "\n${GREEN}🏁 Todas las funciones fueron construidas y desplegadas exitosamente.${NC}"
