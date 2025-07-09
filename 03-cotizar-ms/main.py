@@ -30,7 +30,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Pydantic Schemas
 class CotizacionBase(BaseModel):
     usuario_id: int
-    producto_id: Optional[int] = None
+    producto: str  # Now a string, not an ID
     monto: float
     plazo_meses: int
     tasa_anual: float
@@ -55,6 +55,8 @@ def get_db():
         db.close()
 
 # CRUD Endpoints
+import random
+
 @app.post("/cotizacion", response_model=Cotizacion, tags=["Cotizacion"])
 def create_cotizacion(
     cotizacion_in: CotizacionCreate,
@@ -62,21 +64,21 @@ def create_cotizacion(
     db=Depends(get_db)
 ):
     now = datetime.datetime.utcnow()
+    cae_random = round(random.uniform(1, 5), 2)
     ins = cotizacion.insert().values(
         usuario_id=user["id"],
-        producto_id=cotizacion_in.producto_id,
+        producto_id=None,  # Not used anymore
         monto=cotizacion_in.monto,
         plazo_meses=cotizacion_in.plazo_meses,
         tasa_anual=cotizacion_in.tasa_anual,
         cuota_mensual=cotizacion_in.cuota_mensual,
         total_pagado=cotizacion_in.total_pagado,
-        cae=cotizacion_in.cae,
+        cae=cae_random,
         created_at=now
     )
     result = db.execute(ins)
     db.commit()
-    cotizacion_id = result.lastrowid
-    return Cotizacion(id=cotizacion_id, created_at=now, **cotizacion_in.dict())
+    return Cotizacion(id=result.lastrowid, created_at=now, cae=cae_random, **cotizacion_in.dict())
 
 @app.get("/cotizacion", response_model=List[Cotizacion], tags=["Cotizacion"])
 def list_cotizaciones(user=Depends(get_current_user), db=Depends(get_db)):
