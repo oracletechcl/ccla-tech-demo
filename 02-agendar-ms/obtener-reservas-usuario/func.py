@@ -3,8 +3,9 @@ import json
 from auth import get_current_user
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, select
-from shared.models import reserva, metadata
+from models import reserva, metadata
 import config
+from deserialize import default_serializer
 
 def handler(ctx, data: io.BytesIO = None):
     try:
@@ -26,7 +27,7 @@ def handler(ctx, data: io.BytesIO = None):
         finally:
             db.close()
 
-        return json.dumps(rows)
+        return json.dumps(rows, default=default_serializer)
 
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)})

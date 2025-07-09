@@ -3,7 +3,7 @@ import json
 from auth import get_current_user
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, delete
-from shared.models import reserva, metadata
+from models import reserva, metadata
 import config
 
 
