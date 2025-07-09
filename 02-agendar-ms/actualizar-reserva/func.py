@@ -39,7 +39,12 @@ def handler(ctx, data: io.BytesIO = None):
                 return json.dumps({"status": "error", "message": "Reserva no encontrada"})
             
             r = db.execute(select(reserva).where(reserva.c.id == reserva_id)).first()
-            return json.dumps(dict(r._mapping))
+            # Serialize any date/time fields to ISO format
+            result_dict = dict(r._mapping)
+            for k, v in result_dict.items():
+                if isinstance(v, (datetime.date, datetime.time, datetime.datetime)):
+                    result_dict[k] = v.isoformat()
+            return json.dumps(result_dict)
         finally:
             db.close()
 
