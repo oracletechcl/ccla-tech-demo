@@ -7,7 +7,7 @@ cotizacion = Table(
     metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("usuario_id", Integer, nullable=False),
-    Column("producto_id", Integer, ForeignKey("producto.id"), nullable=True),
+    Column("producto", String(32), nullable=False),
     Column("monto", DECIMAL(15, 2), nullable=False),
     Column("plazo_meses", Integer, nullable=False),
     Column("tasa_anual", DECIMAL(5, 2), nullable=False),
