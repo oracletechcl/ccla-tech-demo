@@ -1,98 +1,85 @@
 #!/bin/bash
 
-# ======= EDITAR ESTAS VARIABLES =======
-APP_NAME="cotizar-ms-fn"
-FUNC_NAME="cotizar-ms"
-FN_CONTEXT="us-sanjose-1"
-OCI_COMPARTMENT_OCID="ocid1.compartment.oc1..aaaaaaaal7vn7wsy3qgizklrlfgo2vllfta3wkqlnfkvykoroite3lzxbnna"
-REGION_KEY="sjc"
-OCIR_NS="idi1o0a010nx"
-OCI_USERNAME="oracleidentitycloudservice/denny.alquinta@oracle.com"
-OCI_AUTH_TOKEN="T1R;m:O3onysya}OdnaI"
-DOCKER_IMAGE="$REGION_KEY.ocir.io/$OCIR_NS/$FUNC_NAME:latest"
-EXPECTED_API_URL="https://functions.us-sanjose-1.oci.oraclecloud.com"
-# =======================================
+# ---------- CONFIGURACIÓN ----------
+DOCKERHUB_USERNAME="dralquinta"
+REPO_NAME="cotizar-ms"
+TAG="v1"
+DOCKER_IMAGE="${DOCKERHUB_USERNAME}/${REPO_NAME}:${TAG}"
 
-set -e
+COMPARTMENT_OCID="ocid1.compartment.oc1..aaaaaaaal7vn7wsy3qgizklrlfgo2vllfta3wkqlnfkvykoroite3lzxbnna"
+SUBNET_OCID="ocid1.subnet.oc1.us-sanjose-1.aaaaaaaaydads5e35xkxhkiajee77j5qlqtpzd77czjwonncahblx6pvrdza" # public - for testing
+#SUBNET_OCID="ocid1.subnet.oc1.us-sanjose-1.aaaaaaaa23am2rdz7db7ty5btfdndlah2tusxbv52jb3sdaehrghwdbhv7ba" #private
+CONTAINER_NAME="cotizar-ms"
+SHAPE="CI.Standard.E4.Flex"
 
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-NC='\033[0m'
-
-# 1. Verifica autenticación OCI CLI
-if ! oci os ns get &>/dev/null; then
-    echo -e "${RED}ERROR: No estás autenticado en OCI CLI. Revisa tu configuración y credenciales.${NC}"
+# --------- CHEQUEO DE VARIABLES ----------
+for v in DOCKER_IMAGE CONTAINER_NAME COMPARTMENT_OCID SUBNET_OCID SHAPE; do
+  if [ -z "${!v}" ]; then
+    echo "❌ Error: Variable $v está vacía. Abortando."
     exit 1
-else
-    echo -e "${GREEN}OK: OCI CLI está autenticado.${NC}"
-fi
+  fi
+done
 
-# 2. Crear contexto si no existe
-if ! fn list context | grep -wq "$FN_CONTEXT"; then
-    echo "Contexto '$FN_CONTEXT' no existe. Creando..."
-    fn create context "$FN_CONTEXT" --provider oracle
-else
-    echo "Contexto '$FN_CONTEXT' ya existe y está sano."
-fi
-
-# Setea la región en el contexto si no está seteada correctamente
-CURRENT_REGION=$(fn inspect context | grep 'oracle.region' | awk '{print $2}')
-if [[ "$CURRENT_REGION" != "us-sanjose-1" ]]; then
-    fn update context oracle.region us-sanjose-1
-    echo "Contexto '$FN_CONTEXT' actualizado con region us-sanjose-1."
-fi
-
-# Setea el api-url de Functions (clave para Fn CLI)
-CURRENT_API_URL=$(fn inspect context | grep "api-url" | awk '{print $2}' || true)
-if [[ "$CURRENT_API_URL" != "$EXPECTED_API_URL" ]]; then
-    fn update context api-url "$EXPECTED_API_URL"
-    echo "api-url del contexto seteado a $EXPECTED_API_URL"
-else
-    echo "api-url ya está seteado correctamente."
-fi
-
-# Usar contexto si no está activo
-CURRENT_CONTEXT=$(fn list context | grep '*' | awk '{print $2}')
-if [[ "$CURRENT_CONTEXT" != "$FN_CONTEXT" ]]; then
-    fn use context "$FN_CONTEXT" || true
-    echo "Contexto cambiado a '$FN_CONTEXT'."
-else
-    echo "Ya estás usando el contexto '$FN_CONTEXT'."
-fi
-
-# 3. Set compartment-id (idempotente)
-fn update context oracle.compartment-id "$OCI_COMPARTMENT_OCID"
-echo "Contexto '$FN_CONTEXT' actualizado con compartment OCID."
-
-# 4. Setea Registry si no está definido
-CURRENT_REGISTRY=$(fn inspect context | grep "registry" | awk '{print $2}' || true)
-EXPECTED_REGISTRY="$REGION_KEY.ocir.io/$OCIR_NS"
-if [[ "$CURRENT_REGISTRY" != "$EXPECTED_REGISTRY" ]]; then
-    fn update context registry "$EXPECTED_REGISTRY"
-    echo "Registry actualizado: $EXPECTED_REGISTRY"
-else
-    echo "Registry ya está seteado correctamente."
-fi
-
-# 5. Docker login a OCIR (idempotente)
-docker logout "$REGION_KEY.ocir.io" 2>/dev/null || true
-sleep 1
-echo "Haciendo login a OCIR..."
-if ! echo "$OCI_AUTH_TOKEN" | docker login "$REGION_KEY.ocir.io" -u "$OCIR_NS/$OCI_USERNAME" --password-stdin; then
-    echo "ERROR: Falló el login a OCIR. Revisa tu token, usuario y namespace."
+# ---------- BUILD IMAGE ----------
+echo "🔧 Building Docker Image..."
+if ! docker build -t "$DOCKER_IMAGE" .; then
+    echo "❌ Error: Failure in Docker image construction. No further actions will be done. Fix and retry"
     exit 1
 fi
 
-# 6. Verifica que exista func.yaml
-if [[ ! -f func.yaml ]]; then
-    fn init --runtime python
-    echo "fn init ejecutado (func.yaml creado)."
+# ---------- PUSH ----------
+echo "🚀 Uploading image to Docker Hub..."
+if ! docker push "$DOCKER_IMAGE"; then
+    echo "❌ Error: Failure in docker push. Fix and retry."
+    exit 1
+fi
+echo "✅ Imagen subida correctamente: ${DOCKER_IMAGE}"
+
+
+# ------------ ELIMINAR INSTANCIAS PREVIAS Y FAILED ------------
+echo "🔎 Buscando instancias previas y FAILED de $CONTAINER_NAME..."
+
+# Elimina instancias activas y en estado FAILED
+INSTANCE_IDS=$(oci container-instances container-instance list \
+  --compartment-id "$COMPARTMENT_OCID" \
+  --query "data.items[?\"display-name\"=='$CONTAINER_NAME' && (\"lifecycle-state\"!='DELETED')].id" \
+  --raw-output)
+
+if [[ -n "$INSTANCE_IDS" ]]; then
+  echo "$INSTANCE_IDS" | while IFS= read -r CI_ID; do
+    CLEAN_ID=$(echo "$CI_ID" | sed 's/[", ]//g')
+    if [[ "$CLEAN_ID" =~ ^ocid1\.computecontainerinstance\. ]]; then
+      echo "🗑️  Eliminando Container Instance previa o FAILED ($CLEAN_ID)..."
+      oci container-instances container-instance delete --container-instance-id "$CLEAN_ID" --force &
+    fi
+  done
+  echo "⏳ Borrado de instancias solicitado (no se espera confirmación, puedes crear inmediatamente)"
 else
-    echo "func.yaml ya existe."
+  echo "🟢 No hay instancias previas ni FAILED de $CONTAINER_NAME"
 fi
 
-# 7. Build y deploy function (Fn CLI se encarga del push)
-echo "Construyendo y desplegando función Fn..."
-fn -v deploy --app "$APP_NAME"
+# ------------ CREAR NUEVA INSTANCIA ------------
+echo "🚀 Creando nueva Container Instance: $CONTAINER_NAME"
+AVAILABILITY_DOMAIN=$(oci iam availability-domain list --compartment-id "$COMPARTMENT_OCID" --query "data[0].name" --raw-output)
 
-echo -e "${GREEN}✅ Build & deploy completo para Oracle Functions con Fn CLI.${NC}"
+SHAPE_CONFIG='{"ocpus": 2, "memoryInGBs": 16}'
+
+oci container-instances container-instance create \
+  --compartment-id "$COMPARTMENT_OCID" \
+  --availability-domain "$AVAILABILITY_DOMAIN" \
+  --shape "$SHAPE" \
+  --shape-config "$SHAPE_CONFIG" \
+  --display-name "$CONTAINER_NAME" \
+  --containers '[
+  {
+    "imageUrl": "'"$DOCKER_IMAGE"'",
+    "command": ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"],
+    "name": "'"$CONTAINER_NAME"'",
+    "portMappings": [{"containerPort": 8080, "hostPort": 8080, "protocol": "TCP"}]
+  }
+]' \
+  --vnics '[{"subnetId": "'"$SUBNET_OCID"'", "assignPublicIp": true}]' \
+  --wait-for-state SUCCEEDED \
+  --wait-for-state FAILED
+
+echo "🏁 OCI Container Instance deployment triggered. Revisa la OCI Console para la IP pública."

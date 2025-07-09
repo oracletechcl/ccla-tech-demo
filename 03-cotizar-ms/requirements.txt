@@ -1,6 +1,6 @@
-fdk>=0.1.95
 fastapi
+uvicorn
 sqlalchemy
 pymysql
 PyJWT
-uvicorn
+python-dotenv
