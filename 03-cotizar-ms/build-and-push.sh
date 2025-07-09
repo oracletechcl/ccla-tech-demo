@@ -73,9 +73,9 @@ oci container-instances container-instance create \
   --containers '[
   {
     "imageUrl": "'"$DOCKER_IMAGE"'",
-    "command": ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"],
+    "command": ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"],
     "name": "'"$CONTAINER_NAME"'",
-    "portMappings": [{"containerPort": 8080, "hostPort": 8080, "protocol": "TCP"}]
+    "portMappings": [{"containerPort": 80, "hostPort": 80, "protocol": "TCP"}]
   }
 ]' \
   --vnics '[{"subnetId": "'"$SUBNET_OCID"'", "assignPublicIp": true}]' \
