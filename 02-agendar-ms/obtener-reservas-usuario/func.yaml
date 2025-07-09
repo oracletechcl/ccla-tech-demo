@@ -1,5 +1,5 @@
 schema_version: 20180708
-name: obtener-reserva-usuario
+name: obtener-reservas-usuario
 version: 0.0.1
 runtime: python
 build_image: fnproject/python:3.11-dev
