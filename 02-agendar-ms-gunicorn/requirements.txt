@@ -1,7 +1,0 @@
-fdk>=0.1.95
-fastapi
-uvicorn
-pydantic
-pymysql
-sqlalchemy
-PyJWT
