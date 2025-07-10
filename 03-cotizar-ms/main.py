@@ -1,3 +1,4 @@
+
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
@@ -27,10 +28,17 @@ metadata.create_all(engine)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
+
 # Pydantic Schemas
-class CotizacionBase(BaseModel):
+class CotizacionCreate(BaseModel):
+    producto_seguro_id: int
+    plazo_meses: int
+
+class Cotizacion(BaseModel):
+    id: int
     usuario_id: int
-    producto: str  # Now a string, not an ID
+    producto_seguro_id: int
+    producto_nombre: str
     monto: float
     plazo_meses: int
     tasa_anual: float
@@ -38,12 +46,6 @@ class CotizacionBase(BaseModel):
     total_pagado: float
     cae: float
     created_at: Optional[datetime.datetime] = None
-
-class CotizacionCreate(CotizacionBase):
-    pass
-
-class Cotizacion(CotizacionBase):
-    id: int
 
 # Dependency
 
@@ -54,8 +56,19 @@ def get_db():
     finally:
         db.close()
 
+
 # CRUD Endpoints
 import random
+from fastapi import Depends
+from sqlalchemy import select
+from models import producto_seguro
+
+# Expose /productos endpoint after app and dependencies are defined
+@app.get("/productos", tags=["Productos"])
+def list_productos(db=Depends(get_db)):
+    result = db.execute(select(producto_seguro))
+    return [dict(row._mapping) for row in result]
+
 
 @app.post("/cotizacion", response_model=Cotizacion, tags=["Cotizacion"])
 def create_cotizacion(
@@ -63,27 +76,58 @@ def create_cotizacion(
     user=Depends(get_current_user),
     db=Depends(get_db)
 ):
-    now = datetime.datetime.utcnow()
-    cae_random = round(random.uniform(1, 5), 2)
+    now = datetime.datetime.now()
+    # Fetch product details
+    prod = db.execute(select(producto_seguro).where(producto_seguro.c.id == cotizacion_in.producto_seguro_id)).first()
+    if not prod:
+        raise HTTPException(status_code=400, detail="Producto no encontrado")
+    prod_data = dict(prod._mapping)
+    # Calculate quote fields
+    monto = float(prod_data.get('prima_base', 0))
+    tasa_anual = 5.0  # Example: fixed or from product
+    plazo_meses = cotizacion_in.plazo_meses
+    cuota_mensual = round(monto / plazo_meses, 2) if plazo_meses else 0
+    total_pagado = round(cuota_mensual * plazo_meses, 2)
+    cae = round(random.uniform(1, 5), 2)
     ins = cotizacion.insert().values(
         usuario_id=user["id"],
-        producto_id=None,  # Not used anymore
-        monto=cotizacion_in.monto,
-        plazo_meses=cotizacion_in.plazo_meses,
-        tasa_anual=cotizacion_in.tasa_anual,
-        cuota_mensual=cotizacion_in.cuota_mensual,
-        total_pagado=cotizacion_in.total_pagado,
-        cae=cae_random,
+        producto_seguro_id=cotizacion_in.producto_seguro_id,
+        monto=monto,
+        plazo_meses=plazo_meses,
+        tasa_anual=tasa_anual,
+        cuota_mensual=cuota_mensual,
+        total_pagado=total_pagado,
+        cae=cae,
         created_at=now
     )
     result = db.execute(ins)
     db.commit()
-    return Cotizacion(id=result.lastrowid, created_at=now, cae=cae_random, **cotizacion_in.dict())
+    return Cotizacion(
+        id=result.lastrowid,
+        usuario_id=user["id"],
+        producto_seguro_id=cotizacion_in.producto_seguro_id,
+        producto_nombre=prod_data.get('nombre', ''),
+        monto=monto,
+        plazo_meses=plazo_meses,
+        tasa_anual=tasa_anual,
+        cuota_mensual=cuota_mensual,
+        total_pagado=total_pagado,
+        cae=cae,
+        created_at=now
+    )
 
 @app.get("/cotizacion", response_model=List[Cotizacion], tags=["Cotizacion"])
 def list_cotizaciones(user=Depends(get_current_user), db=Depends(get_db)):
     result = db.execute(select(cotizacion).where(cotizacion.c.usuario_id == user["id"]))
-    return [Cotizacion(**dict(row._mapping)) for row in result]
+    cotizaciones = []
+    for row in result:
+        cot_dict = dict(row._mapping)
+        # If producto_nombre is missing, fetch it from producto_seguro
+        if 'producto_nombre' not in cot_dict or not cot_dict['producto_nombre']:
+            prod = db.execute(select(producto_seguro).where(producto_seguro.c.id == cot_dict['producto_seguro_id'])).first()
+            cot_dict['producto_nombre'] = prod._mapping['nombre'] if prod else ''
+        cotizaciones.append(Cotizacion(**cot_dict))
+    return cotizaciones
 
 @app.get("/cotizacion/{cotizacion_id}", response_model=Cotizacion, tags=["Cotizacion"])
 def get_cotizacion(cotizacion_id: int, user=Depends(get_current_user), db=Depends(get_db)):
